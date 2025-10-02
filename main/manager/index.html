@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard</title>
+  <link rel="stylesheet" href="../../css/main.css">
+
+<link rel="stylesheet" href="../../css/header.css">
+<body>
+
+  <header>
+    <h2>Manager Dashboard</h2>
+    <nav>
+      <a href="/main/manager/index.html">Home</a>
+      <a href="/main/manager/prediksi.html">Prediksi</a>
+      <a href="/login/login.html">Logout</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h1>Selamat Datang, Manager</h1>
+    <p>Pilih salah satu menu berikut untuk melanjutkan:</p>
+
+    <div class="button-group">
+      <button class="hero-btn" onclick="location.href='prediksi.html'">Prediksi Kebutuhan</button>
+      <button class="hero-btn" onclick="location.href='buatpesanan.html'">Buat Pesanan</button>
+      <button class="hero-btn" onclick="location.href='cekstok.html'">Cek Stok</button>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 Restoran Sehat
+  </footer>
+
+  <!-- Proteksi login -->
+  <script type="module" src="../../javascript/proteksi.js"></script>
+
+</body>
+</html>

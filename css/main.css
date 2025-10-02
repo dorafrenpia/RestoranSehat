@@ -1,0 +1,230 @@
+/* ===== MAIN.CSS ===== */
+
+/* Reset dan box-sizing */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+/* BODY */
+body {
+  background: linear-gradient(135deg, #43cea2, #185a9d);
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column; /* footer selalu di bawah */
+  text-align: center;
+  padding-top: 70px; /* space untuk header tetap */
+}
+
+/* HEADER */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(24, 90, 157, 0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 5%;
+  z-index: 999;
+}
+
+header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+nav a {
+  color: #fff;
+  margin-left: 1rem;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.3s ease;
+}
+
+nav a:hover {
+  opacity: 0.7;
+}
+
+/* HERO / KONTEN UTAMA */
+.hero {
+  flex: 1 0 auto;
+  width: 90%;
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3rem); /* responsif */
+  font-weight: 700;
+}
+
+.hero p {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  color: #e0f7fa;
+}
+
+/* BUTTON GROUP */
+.button-group {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.hero-btn {
+  background: #fff;
+  color: #185a9d;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+  min-width: 180px;
+  flex: 1 1 auto; /* fleksibel saat layar kecil */
+  max-width: 220px;
+}
+
+.hero-btn:hover {
+  background: #43cea2;
+  color: #fff;
+  transform: translateY(-3px);
+}
+
+/* MANAGER CONTAINER */
+.manager-container {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  text-align: center;
+  margin: 1rem auto;
+}
+
+.manager-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.manager-btn {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  background-color: #4caf50;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.manager-btn:hover {
+  background-color: #43a047;
+}
+
+/* LOGIN FORM */
+.login-container {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  margin: 1rem auto;
+}
+
+.login-title {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.login-form label {
+  font-weight: bold;
+  color: #333;
+}
+
+.login-form input {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.login-btn {
+  padding: 0.75rem;
+  background-color: #4caf50;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+  background-color: #43a047;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.register-link a {
+  color: #4caf50;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+/* FOOTER */
+footer {
+  width: 100%;
+  text-align: center;
+  padding: 1rem;
+  color: #fff;
+  background: rgba(24, 90, 157, 0.7);
+  backdrop-filter: blur(6px);
+  margin-top: auto;
+  display: block;
+}

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/popup.css">
+  <style>
+    /* override main.css untuk login page */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #43cea2, #185a9d);
+      font-family: 'Poppins', Arial, sans-serif;
+    }
+
+    /* kontainer utama login */
+    .login-wrapper {
+      flex: 1; /* ambil ruang yang tersisa */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-container {
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 320px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+      color: #333;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: #fff;
+      background: rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-wrapper">
+    <div class="login-container">
+      <h1 class="login-title">Login</h1>
+      <form id="loginForm" class="login-form">
+        <label for="username"></label>
+        <input type="text" id="username" placeholder="Masukkan Username" required>
+
+        <label for="password"></label>
+        <input type="password" id="password" placeholder="Masukkan Password" required>
+
+        <button type="submit" class="login-btn">Login</button>
+      </form>
+      <p class="register-link">
+        Belum punya akun? <a href="/register/register.html">Daftar di sini</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- POPUP -->
+  <div id="popup" class="popup-overlay">
+    <div class="popup-content">
+      <h2 id="popup-title"></h2>
+      <p id="popup-message"></p>
+      <button id="popup-close">OK</button>
+    </div>
+  </div>
+
+  <footer>
+       &copy; 2025 IT Support . All rights reserved.
+  </footer>
+
+<script type="module">
+  import { db } from '../javascript/firebase.js';
+  import { collection, getDocs, query, where } 
+    from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+  const form = document.getElementById('loginForm');
+  const popup = document.getElementById('popup');
+  const popupTitle = document.getElementById('popup-title');
+  const popupMsg = document.getElementById('popup-message');
+  const popupClose = document.getElementById('popup-close');
+
+  popupClose.addEventListener('click', () => popup.style.display = 'none');
+
+  function showPopup(title, message) {
+    popupTitle.textContent = title;
+    popupMsg.textContent = message;
+    popup.style.display = 'flex';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', username));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        showPopup('Gagal Login', '❌ Username tidak ditemukan!');
+        return;
+      }
+
+      let userData;
+      snapshot.forEach(doc => userData = doc.data());
+
+      if (userData.password === password) {
+        showPopup('Berhasil Login', `✅ Halo ${userData.username} (Role: ${userData.role})`);
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userRole', userData.role);
+
+        popupClose.onclick = () => {
+          popup.style.display = 'none';
+          switch (userData.role) {
+            case 'manager':
+              window.location.href = '/main/manager/prediksi.html';
+              break;
+            case 'supplier':
+              window.location.href = '/main/supplier/home.html';
+              break;
+            case 'gudang':
+              window.location.href = '/main/gudang/home.html';
+              break;
+            case 'kasir':
+              window.location.href = '/main/kasir/home.html';
+              break;
+            default:
+              window.location.href = '/kasir/home.html';
+          }
+        };
+      } else {
+        showPopup('Gagal Login', '❌ Password salah!');
+      }
+    } catch (err) {
+      console.error(err);
+      showPopup('Kesalahan', '❌ Terjadi kesalahan saat login!');
+    }
+  });
+</script>
+</body>
+</html>

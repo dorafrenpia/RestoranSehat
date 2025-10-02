@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kasir - Input Penjualan</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <style>
+    /* HERO / Form Container */
+    .hero {
+      flex: 1 0 auto;
+      max-width: 500px;
+      margin: 8rem auto 2rem auto;
+      padding: 2rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      backdrop-filter: blur(6px);
+      text-align: left;
+      color: #fff;
+      animation: fadeIn 1s ease-out forwards;
+      opacity: 0;
+    }
+
+    .hero h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-size: 2rem;
+      animation: slideDown 1s ease-out forwards;
+      opacity: 0;
+    }
+
+    form label {
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+      font-weight: 600;
+    }
+
+    form input {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    form input:focus {
+      outline: none;
+      border-color: #4caf50;
+    }
+
+    form button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #4caf50;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+
+    form button:hover {
+      background-color: #43a047;
+      transform: translateY(-2px);
+    }
+
+    /* radio + date styling */
+    .date-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(-20px); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h2>Kasir Dashboard</h2>
+    <nav>
+      <a href="/main/kasir/index.html">Home</a>
+      <a href="#">Input Penjualan</a>
+      <a href="/login/login.html">Logout</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h1>Input Penjualan</h1>
+    <form id="salesForm">
+      <label for="itemName">Nama Menu:</label>
+      <input type="text" id="itemName" required>
+
+      <label for="quantity">Jumlah Terjual:</label>
+      <input type="number" id="quantity" required>
+
+      <label>Pilih Tanggal:</label>
+      <div class="date-option">
+        <input type="radio" name="dateOption" id="today" value="today" checked>
+        <label for="today">Hari Ini (Otomatis)</label>
+      </div>
+      <div class="date-option">
+        <input type="radio" name="dateOption" id="manual" value="manual">
+        <label for="manual">Masukkan Tanggal</label>
+        <input type="date" id="manualDate" disabled>
+      </div>
+
+      <button type="submit">Simpan</button>
+    </form>
+  </div>
+
+  <footer>
+    &copy; 2025 Restoran Sehat
+  </footer>
+
+  <!-- Proteksi login -->
+  <script type="module" src="../../javascript/proteksi.js"></script>
+
+  <script type="module">
+    import { db } from '../../javascript/firebase.js';
+    import { collection, addDoc, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const salesForm = document.getElementById('salesForm');
+    const manualRadio = document.getElementById('manual');
+    const todayRadio = document.getElementById('today');
+    const manualDateInput = document.getElementById('manualDate');
+
+    // enable/disable input date sesuai radio
+    manualRadio.addEventListener('change', () => { manualDateInput.disabled = !manualRadio.checked; });
+    todayRadio.addEventListener('change', () => { manualDateInput.disabled = manualRadio.checked ? false : true; });
+
+    salesForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const itemName = document.getElementById('itemName').value;
+      const quantity = parseInt(document.getElementById('quantity').value);
+
+      // ambil tanggal sesuai pilihan
+      let selectedDate = new Date();
+      if(manualRadio.checked){
+        const dateValue = manualDateInput.value;
+        if(!dateValue){ alert('Mohon pilih tanggal!'); return; }
+        selectedDate = new Date(dateValue);
+      }
+      const dateStr = selectedDate.toISOString().split('T')[0]; // format yyyy-mm-dd
+
+      try {
+        const salesRef = collection(db, 'sales');
+        const q = query(salesRef, where("item", "==", itemName));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          // update dokumen existing
+          querySnapshot.forEach(async (document) => {
+            const data = document.data();
+            let salesArray = data.sales || [];
+
+            const existingIndex = salesArray.findIndex(s => s.date === dateStr);
+            if(existingIndex >= 0){
+              salesArray[existingIndex].quantity += quantity;
+            } else {
+              salesArray.push({date: dateStr, quantity: quantity});
+            }
+
+            await updateDoc(doc(db, 'sales', document.id), { sales: salesArray });
+          });
+          alert('Jumlah penjualan berhasil diperbarui!');
+        } else {
+          // buat dokumen baru
+          await addDoc(salesRef, {
+            item: itemName,
+            sales: [{date: dateStr, quantity: quantity}]
+          });
+          alert('Data penjualan tersimpan!');
+        }
+
+        salesForm.reset();
+        manualDateInput.disabled = true;
+
+      } catch (err) {
+        console.error('Error saat menyimpan data: ', err);
+        alert('Gagal menyimpan data: ' + err.message);
+      }
+    });
+  </script>
+
+</body>
+</html>

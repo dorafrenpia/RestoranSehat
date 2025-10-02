@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager - Prediksi Kebutuhan</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <style>
+    #predictions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .prediction-card {
+      background: linear-gradient(135deg, #a8e6cf, #dcedc1);
+      color: #2e7d32;
+      border-radius: 18px;
+      padding: 2rem 2.5rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      transition: transform 0.3s, box-shadow 0.3s;
+      text-align: left;
+      font-family: 'Poppins', sans-serif;
+      min-height: 140px;
+      border: 2px solid #81c784;
+    }
+    .prediction-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.3);
+    }
+    .prediction-title { font-weight: 700; font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .prediction-quantity { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .prediction-label { font-size: 1rem; color: #555; }
+    @media(max-width: 600px){
+      #predictions { grid-template-columns: 1fr; }
+      .prediction-card { padding: 1.5rem 2rem; }
+      .prediction-title { font-size: 1.2rem; }
+      .prediction-quantity { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>Manager Dashboard</h2>
+  <nav>
+    <a href="/main/manager/index.html">Home</a>
+    <a href="/main/manager/prediksi.html">Prediksi</a>
+    <a href="/login/login.html">Logout</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <h1>Prediksi Kebutuhan Menu</h1>
+  <p>
+    Prediksi kebutuhan menu berdasarkan penjualan hari ini. 
+    Pilih untuk <strong>Besok, 1 Minggu, 1 Bulan, atau 1 Tahun</strong>.
+    Semua hasil dibulatkan ke atas untuk stok aman.
+  </p>
+<div class="button-group">
+    <button id="btnDaily" class="hero-btn">Besok</button>
+    <button id="btnWeekly" class="hero-btn">1 Minggu</button>
+    <button id="btnMonthly" class="hero-btn">1 Bulan</button>
+    <button id="btnYearly" class="hero-btn">1 Tahun</button>
+  </div>
+
+  <br><br>
+  <h2 id="predictions-title" style="display:none;">Hasil Prediksi</h2>
+  <div id="predictions" style="display:none;"></div>
+</div>
+
+<footer>
+  &copy; 2025 Restoran Sehat
+</footer>
+
+<script type="module" src="../../javascript/proteksi.js"></script>
+
+<script type="module">
+import { db } from '../../javascript/firebase.js';
+import { predictNeed } from './predict.js';
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+async function fetchAndPredict(period, label) {
+  const predictionsDiv = document.getElementById('predictions');
+  const predictionsTitle = document.getElementById('predictions-title');
+
+  predictionsTitle.style.display = 'block';
+  predictionsDiv.style.display = 'block';
+  predictionsDiv.innerHTML = `<p>Menghitung prediksi (${label})...</p>`;
+
+  try {
+    const snap = await getDocs(collection(db, 'sales'));
+    const items = [];
+
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.item && Array.isArray(data.sales)) {
+        items.push({ item: data.item, sales: data.sales });
+      }
+    });
+
+    predictionsDiv.innerHTML = '';
+    if (items.length === 0) {
+      predictionsDiv.innerHTML = '<p>Belum ada data penjualan.</p>';
+      return;
+    }
+
+    items.forEach(itemDoc => {
+      const predictedQty = predictNeed([itemDoc], period);
+      const card = document.createElement('div');
+      card.className = 'prediction-card';
+      card.innerHTML = `
+        <div class="prediction-title">${itemDoc.item}</div>
+        <div class="prediction-quantity">Jumlah: <strong>${predictedQty}</strong> porsi</div>
+        <div class="prediction-label">Periode: ${label}</div>
+      `;
+      predictionsDiv.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error('Error prediksi:', err);
+    predictionsDiv.innerHTML = '<p>Gagal mengambil data penjualan.</p>';
+  }
+}
+
+document.getElementById('btnDaily').addEventListener('click', () => fetchAndPredict('daily', 'Besok'));
+document.getElementById('btnWeekly').addEventListener('click', () => fetchAndPredict('weekly', '1 Minggu'));
+document.getElementById('btnMonthly').addEventListener('click', () => fetchAndPredict('monthly', '1 Bulan'));
+document.getElementById('btnYearly').addEventListener('click', () => fetchAndPredict('yearly', '1 Tahun'));
+</script>
+
+</body>
+</html>

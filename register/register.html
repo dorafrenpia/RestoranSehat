@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registrasi</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/popup.css">
+  <style>
+    /* override main.css untuk halaman registrasi */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #43cea2, #185a9d);
+      font-family: 'Poppins', Arial, sans-serif;
+    }
+
+    /* wrapper untuk konten agar bisa center */
+    .register-wrapper {
+      flex: 1; /* ambil ruang yang tersisa */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-container {
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 320px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+      color: #333;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: #fff;
+      background: rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="register-wrapper">
+    <div class="login-container">
+      <h1 class="login-title">Registrasi</h1>
+      <form id="registerForm" class="login-form">
+
+        <input type="text" id="username" placeholder="Masukkan username" required>
+
+        <input type="password" id="password" placeholder="Masukkan password" required>
+
+        <label for="role">Role</label>
+        <select id="role" required>
+          <option value="manager">Manager</option>
+          <option value="supplier">Supplier</option>
+          <option value="kasir">Kasir</option>
+          <option value="gudang">Gudang</option>
+        </select>
+
+        <button type="submit" class="login-btn">Daftar</button>
+      </form>
+      <p class="register-link">
+        Sudah punya akun? <a href="/login/login.html">Login di sini</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- POPUP -->
+  <div id="popup" class="popup-overlay">
+    <div class="popup-content">
+      <h2 id="popupTitle">Gagal</h2>
+      <p id="popupMessage">Username sudah digunakan.</p>
+      <button id="closePopup">Tutup</button>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 IT Support . All rights reserved.
+  </footer>
+
+<script type="module">
+  import { db } from '../javascript/firebase.js';
+  import { collection, doc, setDoc, getDocs, query, where } 
+    from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+  const form = document.getElementById('registerForm');
+  const popup = document.getElementById('popup');
+  const popupTitle = document.getElementById('popupTitle');
+  const popupMessage = document.getElementById('popupMessage');
+  const closePopupBtn = document.getElementById('closePopup');
+
+  function showPopup(title, message) {
+    popupTitle.textContent = title;
+    popupMessage.textContent = message;
+    popup.style.display = 'flex';
+  }
+
+  closePopupBtn.addEventListener('click', () => {
+    popup.style.display = 'none';
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const role = document.getElementById('role').value;
+
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', username));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        showPopup('Gagal', '❌ Username sudah digunakan. Silakan pilih username lain.');
+        return;
+      }
+
+      // auto increment userId
+      const allUsers = await getDocs(collection(db, 'users'));
+      let maxId = 0;
+      allUsers.forEach(docu => {
+        const data = docu.data();
+        if (data.userId && Number(data.userId) > maxId) maxId = Number(data.userId);
+      });
+      const nextId = maxId + 1;
+
+      // simpan user baru
+      const newUserRef = doc(collection(db, 'users'));
+      await setDoc(newUserRef, {
+        userId: nextId,
+        username: username,
+        password: password,
+        role: role
+      });
+
+      showPopup('Berhasil', `✅ Registrasi berhasil! UserID Anda: ${nextId}`);
+      form.reset();
+
+      setTimeout(() => {
+        window.location.href = '/login/login.html';
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      showPopup('Error', '❌ Gagal menyimpan user!');
+    }
+  });
+</script>
+</body>
+</html>
