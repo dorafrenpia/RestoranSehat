@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard - Data Stok Barang</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <style>
+    .stok-table-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+      padding: 2rem;
+      border-radius: 15px;
+      max-width: 800px;
+      margin: 1rem auto;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .stok-table-container h2 {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .sort-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .sort-buttons button {
+      padding: 0.5rem 0.8rem;
+      background: #43cea2;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .sort-buttons button:hover {
+      background: #36b38f;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 0.8rem;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
+    }
+
+    th {
+      background-color: #43cea2;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h2>Manager Dashboard</h2>
+    <nav>
+      <a href="/main/kasir/index.html">Home</a>
+      <a href="/main/manager/prediksi.html">Prediksi</a>
+      <a href="/login/login.html">Logout</a>
+    </nav>
+  </header>
+
+  <!-- Konten -->
+  <section class="hero">
+    <div class="stok-table-container">
+      <h2>Data Stok Barang</h2>
+
+      <!-- Tombol sort -->
+      <div class="sort-buttons">
+        <button id="sortNama">Urutkan Nama</button>
+        <button id="sortJumlah">Urutkan Jumlah</button>
+        <button id="sortHarga">Urutkan Harga</button>
+      </div>
+
+      <table id="stockTable">
+        <thead>
+          <tr>
+            <th>Nama Barang</th>
+            <th>Jumlah</th>
+            <th>Satuan</th>
+            <th>Harga Satuan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data akan ditambahkan lewat JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2025 Restoran Sehat
+  </footer>
+
+  <!-- Proteksi login -->
+  <script type="module" src="../../javascript/proteksi.js"></script>
+
+  <!-- Script Ambil Data Stok -->
+  <script type="module">
+    import { db } from '../../javascript/firebase.js';
+    import { collection, getDocs } 
+    from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const stockTableBody = document.querySelector('#stockTable tbody');
+    let stockData = []; // simpan semua data di array supaya bisa di-sort
+
+    async function loadStock() {
+      try {
+        const stockRef = collection(db, 'stock');
+        const querySnapshot = await getDocs(stockRef);
+
+        stockData = [];
+        querySnapshot.forEach((docSnap) => {
+          stockData.push(docSnap.data());
+        });
+
+        renderTable(stockData);
+      } catch (err) {
+        console.error('Error saat mengambil data: ', err);
+        alert('Gagal memuat data stok: ' + err.message);
+      }
+    }
+
+    function renderTable(dataArray) {
+      stockTableBody.innerHTML = '';
+      dataArray.forEach((data) => {
+        const row = `
+          <tr>
+            <td>${data.namaBarang}</td>
+            <td>${data.jumlahBarang}</td>
+            <td>${data.satuanBarang}</td>
+            <td>${data.hargaSatuan}</td>
+          </tr>
+        `;
+        stockTableBody.insertAdjacentHTML('beforeend', row);
+      });
+    }
+
+    // Tombol sort
+    document.getElementById('sortNama').addEventListener('click', () => {
+      stockData.sort((a, b) => a.namaBarang.localeCompare(b.namaBarang));
+      renderTable(stockData);
+    });
+
+    document.getElementById('sortJumlah').addEventListener('click', () => {
+      stockData.sort((a, b) => a.jumlahBarang - b.jumlahBarang);
+      renderTable(stockData);
+    });
+
+    document.getElementById('sortHarga').addEventListener('click', () => {
+      stockData.sort((a, b) => a.hargaSatuan - b.hargaSatuan);
+      renderTable(stockData);
+    });
+
+    loadStock();
+  </script>
+</body>
+</html>
