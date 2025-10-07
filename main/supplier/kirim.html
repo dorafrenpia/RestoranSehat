@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard - Data Stock Barang</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <style>
+    .stok-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+      padding: 2rem;
+      border-radius: 15px;
+      max-width: 950px;
+      margin: 1rem auto;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+      color: #fff;
+    }
+
+    .stok-container h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
+    }
+
+    th {
+      background-color: #43cea2;
+      color: #fff;
+    }
+
+    tr:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    .btn-action {
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-right: 0.3rem;
+    }
+
+    .accept-btn {
+      background: #43cea2;
+    }
+    .accept-btn:hover {
+      background: #36b38f;
+    }
+
+    .accepted-label {
+      color: green;
+      font-weight: bold;
+    }
+
+    /* pesan kosong di tabel */
+    .empty-message {
+      text-align: center;
+      padding: 1rem;
+      font-style: italic;
+      color: #555;
+      background: rgba(255,255,255,0.9);
+    }
+
+    /* ====== POPUP STYLE ====== */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none; /* hidden default */
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .popup-content {
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 350px;
+      width: 90%;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+      color: #000; /* semua teks jadi hitam */
+    }
+
+    .popup-content h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      color: #000; /* judul juga hitam */
+    }
+
+    .popup-content p {
+      font-size: 14px;
+      margin-bottom: 15px;
+      /* otomatis ikut color: #000 di atas */
+    }
+
+    .popup-content button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      background: #43cea2;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+
+    .popup-content button:hover {
+      background: #36b38f;
+    }
+  </style>
+</head>
+<body>
+  <header>
+   <a href="/main/supplier/index.html" style="text-decoration: none;"> <h2>Supplier Dashboard</h2></a>
+    <nav>
+      <a href="/main/supplier/index.html">Home</a>
+      
+      <a href="/main/supplier/pesanan.html">Pesanan</a>
+      <a href="/main/supplier/kirim.html">Kirim</a>
+      <a href="/login/login.html">Logout</a>
+    </nav>
+  </header>
+
+  <!-- Konten -->
+  <section class="stok-container">
+    <h1>Data Stock Barang</h1>
+    <table id="stockTable">
+      <thead>
+        <tr>
+          <th>Nama Barang</th>
+          <th>Jumlah</th>
+          <th>Satuan</th>
+          <th>Harga Satuan</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data dari Firebase akan tampil di sini -->
+      </tbody>
+    </table>
+
+    <!-- Tombol Kirim -->
+    <button id="btnKirim" class="btn-action accept-btn" style="margin-top:1rem;">Kirim</button>
+  </section>
+
+  <!-- Popup notif -->
+  <div id="popupOverlay" class="popup-overlay">
+    <div class="popup-content">
+      <h2 id="popupTitle">Notifikasi</h2>
+      <p id="popupMessage">Pesan popup</p>
+      <button id="closePopup">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2025 Restoran Sehat
+  </footer>
+
+  <!-- Proteksi login -->
+  <script type="module" src="../../javascript/proteksi.js"></script>
+
+  <!-- Script Tampilkan Data Stok -->
+  <script type="module">
+    import { db } from '../../javascript/firebase.js';
+    import { 
+      collection, getDocs, setDoc, doc, updateDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const stockTableBody = document.querySelector('#stockTable tbody');
+    const btnKirim = document.getElementById('btnKirim');
+    const popupOverlay = document.getElementById('popupOverlay');
+    const popupTitle = document.getElementById('popupTitle');
+    const popupMessage = document.getElementById('popupMessage');
+    const closePopup = document.getElementById('closePopup');
+
+    // tampil popup
+    function showPopup(title, message) {
+      popupTitle.textContent = title;
+      popupMessage.textContent = message;
+      popupOverlay.style.display = 'flex';
+    }
+
+    // tutup popup
+    closePopup.addEventListener('click', () => {
+      popupOverlay.style.display = 'none';
+    });
+
+    // fungsi load data hanya status "accept" dan belum kirim
+    async function loadStockData() {
+      try {
+        const stockRef = collection(db, 'stock');
+        const querySnapshot = await getDocs(stockRef);
+
+        stockTableBody.innerHTML = '';
+
+        let adaData = false;
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const id = docSnap.id;
+
+          // hanya tampilkan yang status=accept dan belum status2=kirim
+          if (data.status === 'accept' && data.status2 !== 'kirim') {
+            adaData = true;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${data.namaBarang}</td>
+              <td>${data.jumlahBarang}</td>
+              <td>${data.satuanBarang}</td>
+              <td>${data.hargaSatuan}</td>
+              <td><span class="accepted-label">Accept</span></td>
+            `;
+            stockTableBody.appendChild(row);
+          }
+        });
+
+        // kalau tidak ada data
+        if (!adaData) {
+          const emptyRow = document.createElement('tr');
+          const emptyCell = document.createElement('td');
+          emptyCell.colSpan = 5;
+          emptyCell.className = 'empty-message';
+          emptyCell.textContent = 'Tidak ada pesanan.';
+          emptyRow.appendChild(emptyCell);
+          stockTableBody.appendChild(emptyRow);
+        }
+      } catch (err) {
+        console.error('Error saat mengambil data: ', err);
+        alert('Gagal memuat data: ' + err.message);
+      }
+    }
+
+    // fungsi kirim data ke stockgudang + update status2
+    async function kirimData() {
+      try {
+        const stockRef = collection(db, 'stock');
+        const querySnapshot = await getDocs(stockRef);
+
+        let adaYangDikirim = false;
+        for (const docSnap of querySnapshot.docs) {
+          const data = docSnap.data();
+          const id = docSnap.id;
+
+          // hanya kirim yang status accept dan belum punya status2=kirim
+          if (data.status === 'accept' && data.status2 !== 'kirim') {
+            adaYangDikirim = true;
+
+            // buat object baru dengan status2: "kirim" untuk stockgudang
+            const dataGudang = {
+              ...data,
+              status2: 'kirim'
+            };
+
+            // simpan ke koleksi stockgudang dengan id yang sama
+            await setDoc(doc(db, 'stockgudang', id), dataGudang);
+
+            // tambahkan field status2 di koleksi stock jadi "kirim"
+            await updateDoc(doc(db, 'stock', id), {
+              status2: 'kirim'
+            });
+          }
+        }
+
+        if (adaYangDikirim) {
+          showPopup('Berhasil', 'Bahan sedang dikirim ke Gudang');
+        } else {
+          showPopup('Info', 'Tidak ada data yang perlu dikirim');
+        }
+        loadStockData(); // refresh tabel
+      } catch (err) {
+        console.error('Error saat mengirim data: ', err);
+        alert('Gagal kirim data: ' + err.message);
+      }
+    }
+
+    btnKirim.addEventListener('click', kirimData);
+
+    // pertama kali load
+    loadStockData();
+  </script>
+</body>
+</html>

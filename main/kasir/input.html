@@ -6,200 +6,216 @@
   <title>Manager Dashboard - Input Penjualan</title>
   <link rel="stylesheet" href="../../css/main.css">
   <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/popup.css">
+  <link rel="stylesheet" href="main.css">
   <style>
-    /* Container form kasir */
-.kasir-form {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(6px);
-  padding: 2rem;
-  border-radius: 15px;
-  max-width: 500px;
-  margin: 1rem auto;
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* Judul form */
-.kasir-form .form-title {
-  text-align: center;
-  margin-bottom: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #fff;
-}
-
-/* Label dan input */
-.kasir-form label {
-  font-weight: 500;
-  color: #fff;
-}
-
-.kasir-form input[type="text"],
-.kasir-form input[type="number"],
-.kasir-form input[type="date"] {
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-  background: rgba(255,255,255,0.9);
-  color: #333;
-}
-
-/* Date options radio */
-.date-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.date-options label {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: #fff;
-}
-
-/* Tombol simpan */
-.kasir-form .login-btn {
-  width: 100%;
-  background: #43cea2;
-  color: #fff;
-  border: none;
-  padding: 0.8rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.kasir-form .login-btn:hover {
-  background: #36b38f;
-}
-
+    /* contoh style sederhana harga otomatis */
+    .price-label {
+      display:block;
+      font-size: 0.9rem;
+      color:#555;
+      margin-top:4px;
+    }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-
-  <!-- Header -->
   <header>
     <h2>Kasir Dashboard</h2>
     <nav>
       <a href="/main/kasir/index.html">Home</a>
-      <a href="/main/manager/prediksi.html">Prediksi</a>
+      <a href="/main/kasir/input.html">Penjualan</a>
+      <a href="/main/kasir/input.html">Laporan</a>
       <a href="/login/login.html">Logout</a>
     </nav>
   </header>
 
-  <!-- Konten -->
+
   <section class="hero">
-    <h1>Input Penjualan</h1>
-    <!-- Pakai class login-container & login-form supaya auto ke-style -->
+    <h1>Input Pesanan</h1>
     <div class="login-container-kasir">
-  <form id="salesForm" class="login-form kasir-form">
-    
+      <form id="salesForm" class="login-form kasir-form">
 
-    <label for="itemName">Nama Menu</label>
-    <input type="text" id="itemName" required placeholder="Masukan nama menu">
+        <!-- Tombol Tab Menu -->
+        <div class="menu-tabs" id="menuTabs">
+          <button type="button" class="menu-tab active" data-index="1">Menu 1</button>
+        </div>
 
-    <label for="quantity">Jumlah Terjual</label>
-    <input type="number" id="quantity" required placeholder="Masukkan jumlah">
+        <!-- Area Menu -->
+        <div id="menuList">
+          <div class="menu-item active" data-index="1">
+            <div class="menu-box">
+              <h3>Menu 1</h3>
 
-    <label>Pilih Tanggal</label>
-    <div class="date-options">
-      <label>
-        <input type="radio" name="dateOption" id="today" value="today" checked>
-        Hari Ini (Otomatis)
-      </label>
-      <label class="manual-date">
-        <input type="radio" name="dateOption" id="manual" value="manual">
-        Masukkan Tanggal
-        <input type="date" id="manualDate" disabled>
-      </label>
+              <label for="itemName1">Nama Menu</label>
+              <select id="itemName1" class="itemName" required>
+                <option value="">-- Pilih Menu --</option>
+                <option value="Mie Goreng">Mie Goreng</option>
+                <option value="Nasi Goreng">Nasi Goreng</option>
+                <option value="Ayam Geprek">Ayam Geprek</option>
+                <option value="Ifumie">Ifumie</option>
+                <option value="Pisang Goreng">Pisang Goreng</option>
+                <option value="Ubi Goreng">Ubi Goreng</option>
+                <option value="Tempe Goreng">Tempe Goreng</option>
+                <option value="Tahu Goreng">Tahu Goreng</option>
+              </select>
+
+              <!-- harga otomatis muncul di bawah -->
+              <span class="price-label">Harga: Rp 0</span>
+
+              <label class="nasi-checkbox" style="display: none;">
+                <input type="checkbox" class="addRice">
+                Tambah Nasi
+              </label>
+
+              <label for="quantity1">Jumlah Pesanan</label>
+              <input type="number" id="quantity1" class="quantity" required placeholder="Masukkan jumlah">
+            </div>
+          </div>
+
+          <div class="menu-btns">
+            <button type="button" id="addMenuBtn">+ Tambah Menu</button>
+            <button type="button" id="deleteMenuBtn" class="delete-btn">- Hapus Menu</button>
+          </div>
+        </div>
+
+        <label>Pilih Tanggal</label>
+        <div class="date-options">
+          <label>
+            <input type="radio" name="dateOption" id="today" value="today" checked>
+            Hari Ini 
+          </label>
+          <label class="manual-date">
+            <input type="radio" name="dateOption" id="manual" value="manual">
+            Masukkan Tanggal
+            <input type="date" id="manualDate" disabled>
+          </label>
+        </div>
+
+        <button type="submit" class="login-btn">Simpan</button>
+      </form>
     </div>
-
-    <button type="submit" class="login-btn">Simpan</button>
-  </form>
-</div>
-
   </section>
 
-  <!-- Footer -->
+  <!-- ====== POPUP HTML ====== -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup-content">
+      <h2 id="popupTitle">Judul</h2>
+      <p id="popupMessage">Pesan di sini</p>
+      <button id="popupCloseBtn">Tutup</button>
+    </div>
+  </div>
+
   <footer>
     &copy; 2025 Restoran Sehat
   </footer>
-  <!-- Proteksi login -->
-  <script type="module" src="../../javascript/proteksi.js"></script>
 
-  <!-- Script Penjualan -->
-  <script type="module">
-    import { db } from '../../javascript/firebase.js';
-    import { collection, addDoc, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+<script type="module" src="../../javascript/firebase.js"></script>
+<script type="module" src="input.js"></script>
+<script type="module" src="save.js"></script>
 
-    const salesForm = document.getElementById('salesForm');
-    const manualRadio = document.getElementById('manual');
-    const todayRadio = document.getElementById('today');
-    const manualDateInput = document.getElementById('manualDate');
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const salesForm = document.getElementById("salesForm");
 
-    // enable/disable input date sesuai radio
-    manualRadio.addEventListener('change', () => { manualDateInput.disabled = !manualRadio.checked; });
-    todayRadio.addEventListener('change', () => { manualDateInput.disabled = manualRadio.checked ? false : true; });
+  // Daftar harga per menu
+  const hargaMenu = {
+    "Mie Goreng": 15000,
+    "Nasi Goreng": 18000,
+    "Ayam Geprek": 20000,
+    "Ifumie": 17000,
+    "Pisang Goreng": 10000,
+    "Ubi Goreng": 8000,
+    "Tempe Goreng": 5000,
+    "Tahu Goreng": 5000
+  };
 
-    salesForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const itemName = document.getElementById('itemName').value;
-      const quantity = parseInt(document.getElementById('quantity').value);
+  // update harga saat select berubah
+  function updatePriceLabel(select){
+    const menuBox = select.closest(".menu-box");
+    const priceLabel = menuBox.querySelector(".price-label");
+    const harga = hargaMenu[select.value] || 0;
+    priceLabel.textContent = "Harga: Rp " + harga.toLocaleString("id-ID");
+  }
 
-      // ambil tanggal sesuai pilihan
-      let selectedDate = new Date();
-      if(manualRadio.checked){
-        const dateValue = manualDateInput.value;
-        if(!dateValue){ alert('Mohon pilih tanggal!'); return; }
-        selectedDate = new Date(dateValue);
-      }
-      const dateStr = selectedDate.toISOString().split('T')[0]; // format yyyy-mm-dd
-
-      try {
-        const salesRef = collection(db, 'sales');
-        const q = query(salesRef, where("item", "==", itemName));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-          // update dokumen existing
-          querySnapshot.forEach(async (document) => {
-            const data = document.data();
-            let salesArray = data.sales || [];
-
-            const existingIndex = salesArray.findIndex(s => s.date === dateStr);
-            if(existingIndex >= 0){
-              salesArray[existingIndex].quantity += quantity;
-            } else {
-              salesArray.push({date: dateStr, quantity: quantity});
-            }
-
-            await updateDoc(doc(db, 'sales', document.id), { sales: salesArray });
-          });
-          alert('Jumlah penjualan berhasil diperbarui!');
-        } else {
-          // buat dokumen baru
-          await addDoc(salesRef, {
-            item: itemName,
-            sales: [{date: dateStr, quantity: quantity}]
-          });
-          alert('Data penjualan tersimpan!');
-        }
-
-        salesForm.reset();
-        manualDateInput.disabled = true;
-
-      } catch (err) {
-        console.error('Error saat menyimpan data: ', err);
-        alert('Gagal menyimpan data: ' + err.message);
-      }
+  // pas page load + pas user pilih menu
+  document.querySelectorAll(".itemName").forEach(sel=>{
+    sel.addEventListener("change", function(){
+      updatePriceLabel(this);
     });
-  </script>
+  });
 
+  salesForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    // Ambil data menu
+    const menuItems = document.querySelectorAll(".menu-item");
+    let menuData = [];
+    let totalHarga = 0;
+
+    menuItems.forEach((item, index) => {
+      const name = item.querySelector(".itemName").value || "-";
+      const qty = parseInt(item.querySelector(".quantity").value) || 0;
+      const addRice = item.querySelector(".addRice")?.checked ? "Ya" : "Tidak";
+
+      const harga = hargaMenu[name] || 0; // harga per item
+      const subtotal = harga * qty;
+      totalHarga += subtotal;
+
+      menuData.push([
+        index + 1,
+        name,
+        qty,
+        addRice,
+        "Rp " + harga.toLocaleString("id-ID"),
+        "Rp " + subtotal.toLocaleString("id-ID")
+      ]);
+    });
+
+    // Ambil tanggal
+    let tanggal = "";
+    if (document.getElementById("today").checked) {
+      tanggal = new Date().toLocaleDateString("id-ID");
+    } else {
+      tanggal = document.getElementById("manualDate").value || "-";
+    }
+
+    // === Buat PDF ===
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Judul
+    doc.setFontSize(18);
+    doc.text("Restoran Sehat", 105, 15, null, null, "center");
+    doc.setFontSize(12);
+    doc.text("Struk Pesanan", 105, 22, null, null, "center");
+    doc.text("Tanggal: " + tanggal, 14, 32);
+
+    // Garis pembatas
+    doc.line(10, 35, 200, 35);
+
+    // Buat tabel
+    doc.autoTable({
+      startY: 40,
+      head: [['No', 'Nama Menu', 'Jumlah', 'Tambah Nasi', 'Harga Satuan', 'Subtotal']],
+      body: menuData,
+      styles: { halign: 'center' },
+      headStyles: { fillColor: [52, 152, 219] },
+    });
+
+    // Total Harga
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text("Total Harga: Rp " + totalHarga.toLocaleString("id-ID"), 14, finalY);
+
+    // Terima kasih
+    doc.text("Terima kasih atas pesanan Anda!", 14, finalY + 8);
+
+    // Save PDF
+    doc.save("Struk_Pesanan.pdf");
+  });
+});
+</script>
 </body>
 </html>

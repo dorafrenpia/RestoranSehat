@@ -66,11 +66,16 @@
 <body>
 
   <!-- Header -->
+
   <header>
-    <h2>Manager Dashboard</h2>
+    <a href="/main/manager/index.html" style="font-style:unset;text-decoration: none; font-variant: unset;"><h2>Manager Dashboard</h2></a>
     <nav>
-      <a href="/main/kasir/index.html">Home</a>
+      <a href="/main/manager/index.html">Home</a>
       <a href="/main/manager/prediksi.html">Prediksi</a>
+      
+      <a href="/main/manager/input.html">Pesan</a>
+      
+      <a href="/main/manager/data.html">Stock</a>
       <a href="/login/login.html">Logout</a>
     </nav>
   </header>
@@ -157,7 +162,7 @@
             satuanBarang: satuanBarang,
             hargaSatuan: hargaSatuan
           });
-          alert('Data stok barang tersimpan!');
+          alert('Data stock barang tersimpan!');
         }
 
         stockForm.reset();

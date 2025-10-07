@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard - Data Penjualan</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <style>
+    header {
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header a {
+      color: #fff;
+      text-decoration: none;
+      margin-right: 15px;
+    }
+    .stok-container {
+      backdrop-filter: blur(6px);
+      padding: 2rem;
+      border-radius: 15px;
+      max-width: 950px;
+      margin: 1rem auto;
+      color: #fff;
+    }
+    .stok-container h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
+    }
+    th {
+      background-color: #43cea2;
+      color: #fff;
+    }
+    tr:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    #exportBtn, .filterBtn {
+      padding:10px 20px; 
+      font-size:16px; 
+      cursor:pointer; 
+      background:#3498db; 
+      color:white; 
+      border:none; 
+      border-radius:5px; 
+      margin:5px 5px 10px 0;
+    }
+    #filterContainer {
+      margin-bottom: 10px;
+    }
+    #filterContainer input[type="date"] {
+      padding:5px;
+      font-size:16px;
+      border-radius:5px;
+      border:1px solid #ccc;
+      margin-right:5px;
+    }
+  </style>
+</head>
+<body>  <header>
+    <h2>Kasir Dashboard</h2>
+    <nav>
+      <a href="/main/kasir/index.html">Home</a>
+      <a href="/main/kasir/input.html">Penjualan</a>
+      <a href="/main/kasir/input.html">Laporan</a>
+      <a href="/login/login.html">Logout</a>
+    </nav>
+  </header>
+
+
+  <!-- Konten -->
+  <section class="stok-container">
+    <h1>Data Penjualan</h1>
+
+    <div id="filterContainer">
+  <div style="margin-bottom: 5px;">
+    <button class="filterBtn" data-type="hari">Per Hari</button>
+    <button class="filterBtn" data-type="bulan">Per Bulan</button>
+    <button class="filterBtn" data-type="tahun">Per Tahun</button>
+  </div>
+  <div style="margin-bottom: 10px;">
+    <input type="date" id="filterDate">
+  </div>
+</div>
+
+    <table id="stockTable">
+      <thead>
+        <tr>
+          <th>Menu</th>
+          <th>Quantity</th>
+          <th>Tanggal Pesanan</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data dari Firebase akan tampil di sini -->
+      </tbody>
+    </table>
+    
+  <button id="exportBtn">Export ke Excel</button>
+  </section>
+
+  <footer>
+    &copy; 2025 Restoran Sehat
+  </footer>
+
+  <!-- Proteksi login -->
+  <script type="module" src="../../javascript/proteksi.js"></script>
+
+  <!-- Firebase & Excel -->
+  <script type="module">
+    import { db } from '../../javascript/firebase.js';
+    import { collection, getDocs } 
+      from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    // ambil ExcelJS dari CDN
+    const ExcelJSScript = document.createElement('script');
+    ExcelJSScript.src = "https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js";
+    document.head.appendChild(ExcelJSScript);
+
+    const stockTableBody = document.querySelector('#stockTable tbody');
+    const exportBtn = document.getElementById('exportBtn');
+    const filterBtns = document.querySelectorAll('.filterBtn');
+    const filterDateInput = document.getElementById('filterDate');
+
+    let penjualanData = []; // Simpan semua data untuk filter
+
+    async function loadPenjualanData() {
+      const penjualanRef = collection(db, 'penjualan');
+      const querySnapshot = await getDocs(penjualanRef);
+      penjualanData = []; // reset
+
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const tanggal = data.tanggal ?? '-';
+        const pesanan = data.pesanan ?? [];
+        pesanan.forEach(item => {
+          penjualanData.push({
+            menu: item.menu,
+            quantity: item.quantity,
+            tanggal: tanggal
+          });
+        });
+      });
+
+      displayData(penjualanData);
+    }
+
+    function displayData(data) {
+      stockTableBody.innerHTML = '';
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.menu}</td>
+          <td>${item.quantity}</td>
+          <td>${item.tanggal}</td>
+        `;
+        stockTableBody.appendChild(row);
+      });
+    }
+
+    // === Filter berdasarkan tombol ===
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        const selected = filterDateInput.value; // format: yyyy-mm-dd
+        if (!selected) {
+          alert('Silakan pilih tanggal dahulu!');
+          return;
+        }
+
+        const filtered = penjualanData.filter(item => {
+          const itemDate = new Date(item.tanggal);
+          const selDate = new Date(selected);
+
+          if (type === 'hari') {
+            return itemDate.toDateString() === selDate.toDateString();
+          } else if (type === 'bulan') {
+            return itemDate.getMonth() === selDate.getMonth() &&
+                   itemDate.getFullYear() === selDate.getFullYear();
+          } else if (type === 'tahun') {
+            return itemDate.getFullYear() === selDate.getFullYear();
+          }
+          return true;
+        });
+
+        displayData(filtered);
+      });
+    });
+
+    // === Export Excel ===
+    exportBtn.addEventListener('click', async () => {
+      if (!window.ExcelJS) {
+        alert('ExcelJS belum siap, tunggu sebentar lalu klik lagi.');
+        return;
+      }
+      try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Penjualan');
+
+        worksheet.columns = [
+          { header: 'Menu', key: 'menu', width: 25 },
+          { header: 'Quantity', key: 'quantity', width: 10 },
+          { header: 'Tanggal Pesanan', key: 'tanggal', width: 15 }
+        ];
+
+        worksheet.getRow(1).eachCell(cell => {
+          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+          cell.fill = { type: 'pattern', pattern:'solid', fgColor:{argb:'FF3498DB'} };
+          cell.alignment = { horizontal: 'center' };
+        });
+
+        const rowsToExport = [];
+        const tableRows = stockTableBody.querySelectorAll('tr');
+        tableRows.forEach(tr => {
+          const tds = tr.querySelectorAll('td');
+          rowsToExport.push({
+            menu: tds[0].textContent,
+            quantity: tds[1].textContent,
+            tanggal: tds[2].textContent
+          });
+        });
+
+        rowsToExport.forEach(r => worksheet.addRow(r));
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'Penjualan.xlsx';
+        link.click();
+      } catch (err) {
+        console.error(err);
+        alert('Gagal export Excel: ' + err.message);
+      }
+    });
+
+    loadPenjualanData();
+  </script>
+</body>
+</html>

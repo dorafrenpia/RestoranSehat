@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard - Data Pesanan Stock Bahan</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <style>
+  
+    header {
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header a {
+      color: #fff;
+      text-decoration: none;
+      margin-right: 15px;
+    }
+    .stok-container {
+      backdrop-filter: blur(6px);
+      padding: 2rem;
+      border-radius: 15px;
+      max-width: 950px;
+      margin: 1rem auto;
+      color: #fff;
+    }
+    .stok-container h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
+    }
+    th {
+      background-color: #43cea2;
+      color: #fff;
+    }
+    tr:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    .btn-action {
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-right: 0.3rem;
+    }
+    .accept-btn {
+      background: #43cea2;
+    }
+    .accept-btn:hover {
+      background: #36b38f;
+    }
+    .accepted-label {
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>  <header>
+    <h2>Gudang Dashboard</h2>
+    <nav>
+      <a href="/main/gudang/index.html">Home</a>
+      <a href="/main/gudang/datagudang.html">Data</a>
+      <a href="/login/login.html">Logout</a>
+    </nav>
+  </header>
+
+  <!-- Konten -->
+ <section class="stok-container">
+  <h1>Data Pesanan Stock Bahan</h1>
+
+  <button id="exportBtn" style="padding:10px 20px; font-size:16px; cursor:pointer; background:#3498db; color:white; border:none; border-radius:5px; margin:10px 0;">
+    Export ke Excel
+  </button>
+
+  <table id="stockTable">
+    <thead>
+      <tr>
+        <th>Nama Bahan</th>
+        <th>Jumlah</th>
+        <th>Satuan</th>
+        <th>Harga Satuan</th>
+        <th>Status</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data dari Firebase akan tampil di sini -->
+    </tbody>
+  </table>
+</section>
+
+  <footer >
+    &copy; 2025 Restoran Sehat
+  </footer>
+
+  <!-- Proteksi login -->
+  <script type="module" src="../../javascript/proteksi.js"></script>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { db } from '../../javascript/firebase.js';
+    import { collection, getDocs, updateDoc, doc } 
+      from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    // ambil ExcelJS non-module dari CDN
+    const ExcelJSScript = document.createElement('script');
+    ExcelJSScript.src = "https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js";
+    document.head.appendChild(ExcelJSScript);
+
+    const stockTableBody = document.querySelector('#stockTable tbody');
+    const exportBtn = document.getElementById('exportBtn');
+
+    async function updateStatus2(id, status2) {
+      try {
+        await updateDoc(doc(db, 'stock', id), { status2: status2 });
+        loadStockData();
+      } catch (err) {
+        console.error('Gagal update status2: ', err);
+        alert('Gagal update status2: ' + err.message);
+      }
+    }
+
+    async function loadStockData() {
+      const stockRef = collection(db, 'stock');
+      const querySnapshot = await getDocs(stockRef);
+      stockTableBody.innerHTML = '';
+
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const id = docSnap.id;
+
+        const status = data.status ?? '-';
+        const status2 = data.status2 ?? '';
+
+        if (status === 'reject') return;
+        if (!status2) return;
+
+        let statusLabel = status;
+        if (status === 'accept') statusLabel = '<span class="accepted-label">Accept</span>';
+
+        let status2Label = status2;
+        if (status2 === 'kirim') status2Label = '<span style="color:orange;font-weight:bold;">Kirim</span>';
+        if (status2 === 'terima') status2Label = '<span style="color:blue;font-weight:bold;">Terima</span>';
+
+        let actionButtons = '';
+        if (status2 === 'kirim') {
+          actionButtons = `<button class="btn-action accept-btn" data-id="${id}" data-status2="terima">Terima</button>`;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${data.namaBarang}</td>
+          <td>${data.jumlahBarang}</td>
+          <td>${data.satuanBarang}</td>
+          <td>${data.hargaSatuan}</td>
+          <td>${statusLabel}<br>${status2Label}</td>
+          <td>${actionButtons}</td>
+        `;
+        stockTableBody.appendChild(row);
+      });
+
+      // tombol terima
+      document.querySelectorAll('.btn-action.accept-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const status2 = btn.getAttribute('data-status2');
+          updateStatus2(id, status2);
+        });
+      });
+    }
+
+    loadStockData();
+
+    // tombol export Excel
+    exportBtn.addEventListener('click', async () => {
+      if (!window.ExcelJS) {
+        alert('ExcelJS belum siap, tunggu sebentar lalu klik lagi.');
+        return;
+      }
+      try {
+        const snapshot = await getDocs(collection(db, 'stock'));
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Stock');
+
+        worksheet.columns = [
+          { header: 'Nama Bahan', key: 'nama', width: 20 },
+          { header: 'Jumlah', key: 'jumlah', width: 10 },
+          { header: 'Satuan', key: 'satuan', width: 10 },
+          { header: 'Harga Satuan', key: 'harga', width: 15 },
+          { header: 'Status', key: 'status', width: 15 },
+          { header: 'Status2', key: 'status2', width: 15 }
+        ];
+
+        worksheet.getRow(1).eachCell(cell => {
+          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+          cell.fill = { type: 'pattern', pattern:'solid', fgColor:{argb:'FF3498DB'} };
+          cell.alignment = { horizontal: 'center' };
+        });
+
+        snapshot.forEach(docSnap => {
+          const d = docSnap.data();
+          if (d.status === 'reject' || !d.status2) return;
+          worksheet.addRow({
+            nama: d.namaBarang,
+            jumlah: d.jumlahBarang,
+            satuan: d.satuanBarang,
+            harga: d.hargaSatuan,
+            status: d.status,
+            status2: d.status2
+          });
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'StockBahan.xlsx';
+        link.click();
+      } catch (err) {
+        console.error(err);
+        alert('Gagal export Excel: ' + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

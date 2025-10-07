@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard - Data Stok Barang</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <style>
+    .stok-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(6px);
+      padding: 2rem;
+      border-radius: 15px;
+      max-width: 950px;
+      margin: 1rem auto;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+      color: #fff;
+    }
+
+    .stok-container h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
+    }
+
+    th {
+      background-color: #43cea2;
+      color: #fff;
+    }
+
+    tr:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    .btn-action {
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-right: 0.3rem;
+    }
+    .accept-btn {
+      background: #43cea2;
+    }
+    .accept-btn:hover {
+      background: #36b38f;
+    }
+    .reject-btn {
+      background: #e74c3c;
+    }
+    .reject-btn:hover {
+      background: #c0392b;
+    }
+    .accepted-label {
+      color: green;
+      font-weight: bold;
+    }
+    .rejected-label {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+   <a href="/main/supplier/index.html" style="text-decoration: none;"> <h2>Supplier Dashboard</h2></a>
+    <nav>
+      <a href="/main/supplier/index.html">Home</a>
+      
+      <a href="/main/supplier/pesanan.html">Pesanan</a>
+      <a href="/main/supplier/kirim.html">Kirim</a>
+      <a href="/login/login.html">Logout</a>
+    </nav>
+  </header>
+
+  <!-- Konten -->
+  <section class="stok-container">
+    <h1>Data Stok Barang</h1>
+    <table id="stockTable">
+      <thead>
+        <tr>
+          <th>Nama Barang</th>
+          <th>Jumlah</th>
+          <th>Satuan</th>
+          <th>Harga Satuan</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data dari Firebase akan tampil di sini -->
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2025 Restoran Sehat
+  </footer>
+
+  <!-- Proteksi login -->
+  <script type="module" src="../../javascript/proteksi.js"></script>
+
+  <!-- Script Tampilkan Data Stok -->
+  <script type="module">
+    import { db } from '../../javascript/firebase.js';
+    import { collection, getDocs, updateDoc, doc } 
+      from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const stockTableBody = document.querySelector('#stockTable tbody');
+
+    // fungsi update status
+    async function updateStatus(id, status) {
+      try {
+        await updateDoc(doc(db, 'stock', id), {
+          status: status
+        });
+        alert('Status barang diubah menjadi ' + status);
+        loadStockData(); // reload tabel
+      } catch (err) {
+        console.error('Gagal update status: ', err);
+        alert('Gagal update status: ' + err.message);
+      }
+    }
+
+    // ambil semua data
+    async function loadStockData() {
+      try {
+        const stockRef = collection(db, 'stock');
+        const querySnapshot = await getDocs(stockRef);
+
+        stockTableBody.innerHTML = '';
+
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const id = docSnap.id;
+
+          const status = data.status ? data.status : '-';
+          let statusLabel = status;
+          if (status === 'accept') statusLabel = '<span class="accepted-label">Accept</span>';
+          if (status === 'reject') statusLabel = '<span class="rejected-label">Reject</span>';
+
+          // tombol hanya muncul jika status bukan accept/reject
+          let actionButtons = '';
+          if (status !== 'accept' && status !== 'reject') {
+            actionButtons = `
+              <button class="btn-action accept-btn" data-id="${id}" data-status="accept">Accept</button>
+              <button class="btn-action reject-btn" data-id="${id}" data-status="reject">Reject</button>
+            `;
+          }
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${data.namaBarang}</td>
+            <td>${data.jumlahBarang}</td>
+            <td>${data.satuanBarang}</td>
+            <td>${data.hargaSatuan}</td>
+            <td>${statusLabel}</td>
+            <td>${actionButtons}</td>
+          `;
+
+          stockTableBody.appendChild(row);
+        });
+
+        // pasang event listener untuk tombol
+        document.querySelectorAll('.btn-action').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const status = btn.getAttribute('data-status');
+            updateStatus(id, status);
+          });
+        });
+
+      } catch (err) {
+        console.error('Error saat mengambil data: ', err);
+        alert('Gagal memuat data: ' + err.message);
+      }
+    }
+
+    loadStockData();
+  </script>
+</body>
+</html>
